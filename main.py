@@ -1,7 +1,6 @@
 import requests
 from bs4 import BeautifulSoup
 import smtplib
-import datetime as dt
 from dotenv import load_dotenv
 import os
 
