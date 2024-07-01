@@ -10,7 +10,7 @@ load_dotenv()
 
 def check_price(webpage):
     soup = BeautifulSoup(webpage, "html.parser")
-    product_name = soup.find(name="span", id="productTitle").getText()
+    product_name = soup.find(name="span", id="productTitle").getText().strip()
     total_price = float(soup.find(name="span", class_="aok-offscreen").getText().split("$")[1].strip())
     return product_name, total_price
 
@@ -20,7 +20,8 @@ def send_email(product_name, product_price, product_url):
     app_password = os.environ["EMAIL_PASS"]
     to_email = os.environ["TO_EMAIL"]
 
-    body = f"{product_name} is now ${product_price}\n{product_url}"
+    body = f"Subject: PRICE DROP ALERT\n\n{product_name} is now ${product_price}\n\n{product_url}"
+
 
     with smtplib.SMTP("smtp.gmail.com", port=587) as connection:
         connection.starttls()
@@ -29,13 +30,13 @@ def send_email(product_name, product_price, product_url):
         connection.sendmail(
             from_addr=my_email,
             to_addrs=to_email,
-            msg=f"Subject: PRICE DROP ALERT\n\n{body}"
+            msg=body.encode("utf8")
         )
-
 
 
 def main():
     product_url = "https://www.amazon.com/dp/B075CYMYK6?psc=1&ref_=cm_sw_r_cp_ud_ct_FM9M699VKHTT47YD50Q6"
+    threshold = 100.00
 
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
@@ -46,7 +47,11 @@ def main():
     response.raise_for_status()
     webpage = response.text
     prod_name, prod_price = check_price(webpage)
-    print(prod_name, prod_price)
+
+    if prod_price < threshold:
+        send_email(prod_name, prod_price, product_url)
+
+
 
 if __name__ == "__main__":
     main()
